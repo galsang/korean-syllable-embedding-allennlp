@@ -41,13 +41,15 @@ class Visualization(object):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--experiment-path', type=str, required=True)
-    parser.add_argument('--ws353-path', type=str, default='ws353_s.txt')
+    parser.add_argument('--ws353-path', type=str, required=True)
     parser.add_argument('--cuda-device', type=int, default=-1)
     args = parser.parse_args()
+    args.cuda_device = f'cuda:{cuda_device}' \
+        if torch.cuda.is_available() and args.cuda_device >= 0 else 'cpu'
 
     import_submodules('modules')
 
-    if os.path.exists(args.experiment_path + 'model.tar.gz'):
+    if os.path.isfile(f'{args.experiment_path}/model.tar.gz'):
         archive = load_archive(f'{args.experiment_path}/model.tar.gz')
         model = archive.model
     else:
@@ -60,7 +62,7 @@ def main():
 
     metric = WS353(args.ws353_path)
     vocab = model.vocab
-    embedder = model._embedder
+    embedder = model.embedder
     metric(vocab, embedder, args.cuda_device, print_mode=True)
     if not os.path.exists(f'{args.experiment_path}/log/visualization'):
         Visualization(args.experiment_path, vocab, embedder)

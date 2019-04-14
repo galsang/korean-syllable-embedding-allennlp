@@ -1,10 +1,10 @@
 local data_path = "data/ko_wiki.txt";
-local sim_file_path = "data/ws353_s_sh.txt";
+local sim_file_path = "data/WS353_korean.csv";
 local seed = 123;
 local cuda_device = 0;
 local num_workers = 8;
 
-local batch_size = 4096;
+local batch_size = 10000;
 local optimizer = "adam";
 local learning_rate = 0.001;
 local num_epochs = 12;
@@ -47,7 +47,8 @@ local window_size = 4;
             "type": "syllable",
             "syllable_embedding": {
                 "vocab_namespace": "syllables",
-                "embedding_dim": syllable_dim
+                "embedding_dim": syllable_dim,
+                "padding_index": 0
             },
             "syllable_encoder": {
                 "type": "cnn",

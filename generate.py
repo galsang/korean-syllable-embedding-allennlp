@@ -1,5 +1,6 @@
 import argparse
 import os
+from tqdm import tqdm
 
 import torch
 
@@ -27,6 +28,16 @@ class SyllableEmbeddingGenerator(object):
         embedding = self.embedder(word)[0]
         return embedding
 
+    def generate_file(self,
+                      word_input_file_path: str,
+                      word_output_file_path: str) -> None:
+        with open(word_input_file_path, 'r', encoding='utf-8') as fin:
+            with open(word_output_file_path, 'w', encoding='utf-8') as fout:
+                for line in tqdm(fin.readlines):
+                    word = line.strip()
+                    vector = ' '.join([str(v) for v in self.generate(word).detach().numpy()])
+                    print(f"{word}\t{vector}", file=fout)
+
     def interactive(self) -> None:
         while (1):
             word = input("Enter your word (quit: q):  ")
@@ -34,22 +45,12 @@ class SyllableEmbeddingGenerator(object):
                 exit()
             print(self.generate(word).detach().numpy())
 
-    def convert_file(self,
-                     word_input_file_path: str,
-                     word_output_file_path: str) -> None:
-        with open(word_input_file_path, 'r', encoding='utf-8') as fin:
-            with open(word_output_file_path, 'w', encoding='utf-8') as fout:
-                for line in fin:
-                    word = line.strip()
-                    vector = ' '.join([str(v) for v in self.generate(word).detach().numpy()])
-                    print(f"{word}\t{vector}", file=fout)
-
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--experiment-path', type=str, required=True)
-    parser.add_argument('--word-input-file-path', type=str)
-    parser.add_argument('--word-output-file-path', type=str)
+    parser.add_argument('--word-input-file-path', type=str, required=True)
+    parser.add_argument('--word-output-file-path', type=str, required=True)
     args = parser.parse_args()
 
     import_submodules('modules')
@@ -66,12 +67,12 @@ def main():
                            weights_file=f'{args.experiment_path}/best.th')
 
     vocab = model.vocab
-    embedder = model._embedder
+    embedder = model.embedder
     generator = SyllableEmbeddingGenerator(vocab, embedder)
     # generator.interactive()
     if args.word_input_file_path and args.word_output_file_path:
-        generator.convert_file(args.word_input_file_path,
-                               args.word_output_file_path)
+        generator.generate_file(args.word_input_file_path,
+                                args.word_output_file_path)
 
 
 if __name__ == '__main__':
